@@ -372,8 +372,7 @@ function initAudio() {
   noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
   const nd = noiseBuf.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
 
-  decks = [new Deck(0, $('#deckA'), '#22d3ee'), new Deck(1, $('#deckB'), '#f472b6')];
-  updateXfade(); setBpm();
+  setBpm();
 }
 
 function decode(ab) {
@@ -398,19 +397,110 @@ function deckHTML(id, L) {
 }
 $('#decks').innerHTML = deckHTML('a', 'A') + deckHTML('b', 'B');
 
+/* Turntable engine. The same DeckCore runs inside an AudioWorklet (low latency, off the main
+   thread) or, if the browser can't load one, inside a ScriptProcessor on the page. */
+class DeckCore {
+  constructor() { this.ch = null; this.len = 0; this.pos = 0; this.rate = 0; this.playing = false; this.loop = true; this.pitch = 1; this.touch = false; this.tgt = 0; this.force = null; }
+  handle(m) {
+    switch (m.t) {
+      case 'load': this.ch = m.ch; this.len = m.ch[0].length; this.pos = 0; this.tgt = 0; this.force = null; break;
+      case 'play': this.playing = m.on; if (m.on && !this.loop && this.pos >= this.len - 2) { this.pos = 0; this.tgt = 0; } break;
+      case 'cue': this.pos = 0; this.tgt = 0; if (!this.playing) this.rate = 0; break;
+      case 'loop': this.loop = m.on; if (this.len) { this.pos = ((this.pos % this.len) + this.len) % this.len; this.tgt = this.pos; } break;
+      case 'pitch': this.pitch = m.v; break;
+      case 'touch': this.touch = m.on; if (m.on) { this.tgt = this.pos; this.force = null; } break;
+      case 'nudge': this.tgt += m.d; if (!this.loop) this.tgt = Math.max(0, Math.min(this.len - 1, this.tgt)); break;
+      case 'force': this.force = { t0: m.t0, seq: m.seq }; break;
+    }
+  }
+  render(L, R, sr, now) {
+    const n = L.length;
+    if (!this.len) { L.fill(0); if (R !== L) R.fill(0); return null; }
+    const c0 = this.ch[0], c1 = this.ch[1], len = this.len, loop = this.loop;
+    let forced = null;
+    if (this.force) {
+      const el = now - this.force.t0; let acc = 0;
+      for (const s of this.force.seq) { if (el < acc + s.d) { forced = s.r; break; } acc += s.d; }
+      if (forced === null && el >= 0) this.force = null;
+    }
+    const touching = this.touch, tgt = this.tgt, motor = this.playing ? this.pitch : 0;
+    const kFast = 1 - Math.exp(-1 / (0.006 * sr));
+    const kMotor = 1 - Math.exp(-1 / ((this.playing ? 0.09 : 0.28) * sr));
+    const lag = 0.012 * sr;
+    let pos = this.pos, rate = this.rate, ended = false;
+    for (let j = 0; j < n; j++) {
+      let want, k;
+      if (forced !== null) { want = forced; k = kFast; }
+      else if (touching) { want = Math.max(-14, Math.min(14, (tgt - pos) / lag)); k = kFast; }
+      else { want = motor; k = kMotor; }
+      rate += (want - rate) * k;
+      pos += rate;
+      let ip;
+      if (loop) ip = ((pos % len) + len) % len;
+      else {
+        if (pos >= len - 1) { pos = len - 1; if (!touching && forced === null && rate > 0) { rate = 0; ended = true; } }
+        else if (pos < 0) { pos = 0; if (rate < 0) rate = 0; }
+        ip = pos;
+      }
+      const i0 = Math.floor(ip), fr = ip - i0, i1 = i0 + 1 < len ? i0 + 1 : (loop ? 0 : i0);
+      L[j] = c0[i0] + (c0[i1] - c0[i0]) * fr;
+      if (R !== L) R[j] = c1[i0] + (c1[i1] - c1[i0]) * fr;
+    }
+    this.pos = pos; this.rate = rate;
+    if (ended) this.playing = false;
+    return { pos, rate, ended };
+  }
+}
+const WORKLET_SRC = DeckCore.toString() + `
+class DeckProc extends AudioWorkletProcessor {
+  constructor() { super(); this.c = new DeckCore(); this.k = 0; this.port.onmessage = e => this.c.handle(e.data); }
+  process(inputs, outputs) {
+    const out = outputs[0], L = out[0], R = out[1] || out[0];
+    const r = this.c.render(L, R, sampleRate, currentTime);
+    if (r && (r.ended || ++this.k % 3 === 0)) this.port.postMessage(r);
+    return true;
+  }
+}
+registerProcessor('deck-proc', DeckProc);`;
+let workletOK = false;
+async function loadWorklet() {
+  if (!ctx.audioWorklet || !window.AudioWorkletNode) return false;
+  const url = URL.createObjectURL(new Blob([WORKLET_SRC], { type: 'application/javascript' }));
+  try {
+    await Promise.race([ctx.audioWorklet.addModule(url), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))]);
+    return true;
+  } catch (e) { console.warn('AudioWorklet unavailable, using ScriptProcessor', e); return false; }
+}
+
 class Deck {
   constructor(idx, root, color) {
-    Object.assign(this, { idx, root, color, L: idx ? 'B' : 'A', ch: null, len: 0, pos: 0, rate: 0, playing: false,
-      loop: true, pitch: 1, touch: false, pid: null, targetPos: 0, lastAng: 0, force: null, name: '', discImg: null, lastSec: -1 });
+    Object.assign(this, { idx, root, color, L: idx ? 'B' : 'A', len: 0, pos: 0, rate: 0, playing: false,
+      loop: true, pitch: 1, touch: false, pid: null, lastAng: 0, name: '', discImg: null, lastSec: -1 });
     this.cv = root.querySelector('canvas'); this.g = this.cv.getContext('2d');
-    this.proc = ctx.createScriptProcessor(1024, 1, 2);
     this.filter = ctx.createBiquadFilter(); this.filter.type = 'lowpass'; this.filter.frequency.value = 20000; this.filter.Q.value = 0.9;
     this.vol = ctx.createGain(); this.vol.gain.value = 0.85;
     this.xf = ctx.createGain();
-    this.proc.connect(this.filter); this.filter.connect(this.vol); this.vol.connect(this.xf); this.xf.connect(bus);
-    try { const cs = ctx.createConstantSource(); cs.offset.value = 0; cs.connect(this.proc); cs.start(); } catch (e) {}
-    this.proc.onaudioprocess = e => this.process(e);
+    if (workletOK) {
+      this.node = new AudioWorkletNode(ctx, 'deck-proc', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
+      this.node.port.onmessage = e => this.onReport(e.data);
+      this.post = (m, transfer) => this.node.port.postMessage(m, transfer || []);
+    } else {
+      const core = new DeckCore();
+      this.node = ctx.createScriptProcessor(1024, 1, 2);
+      try { const cs = ctx.createConstantSource(); cs.offset.value = 0; cs.connect(this.node); cs.start(); } catch (e) {}
+      this.node.onaudioprocess = e => {
+        const r = core.render(e.outputBuffer.getChannelData(0), e.outputBuffer.getChannelData(1), ctx.sampleRate, ctx.currentTime);
+        if (r) this.onReport(r);
+      };
+      this.post = m => core.handle(m);
+    }
+    this.node.connect(this.filter); this.filter.connect(this.vol); this.vol.connect(this.xf); this.xf.connect(bus);
     this.bindUI();
+  }
+
+  onReport(r) {
+    this.pos = r.pos; this.rate = r.rate;
+    if (r.ended && this.playing) { this.playing = false; this.updPlay(); }
   }
 
   bindUI() {
@@ -418,14 +508,13 @@ class Deck {
     this.bPlay = q('[data-act=play]'); this.bLoop = q('[data-act=loop]');
     this.tName = q('.tname'); this.tTime = q('.ttime');
     this.bPlay.onclick = () => this.togglePlay();
-    q('[data-act=cue]').onclick = () => { this.pos = 0; this.targetPos = 0; if (!this.playing) this.rate = 0; };
+    q('[data-act=cue]').onclick = () => { this.pos = 0; this.post({ t: 'cue' }); };
     this.bLoop.onclick = () => {
-      this.loop = !this.loop;
-      if (this.len) { this.pos = mod(this.pos, this.len); this.targetPos = this.pos; }
+      this.loop = !this.loop; this.post({ t: 'loop', on: this.loop });
       this.bLoop.classList.toggle('on', this.loop);
     };
     const pitch = q('[data-ctl=pitch]'), pv = q('[data-v=pitch]');
-    const setP = () => { this.pitch = pitch.value / 100; const pc = Math.round(pitch.value - 100); pv.textContent = (pc > 0 ? '+' : '') + pc + '%'; };
+    const setP = () => { this.pitch = pitch.value / 100; this.post({ t: 'pitch', v: this.pitch }); const pc = Math.round(pitch.value - 100); pv.textContent = (pc > 0 ? '+' : '') + pc + '%'; };
     pitch.oninput = setP; pv.onclick = () => { pitch.value = 100; setP(); };
     const filt = q('[data-ctl=filter]'), fv = q('[data-v=filter]');
     const setF = () => {
@@ -443,7 +532,7 @@ class Deck {
       if (!this.len) { toast(`Load a sound onto Deck ${this.L} first (record, or use a pad → DECK ${this.L})`); return; }
       if (this.pid !== null) return;
       this.pid = e.pointerId; try { cv.setPointerCapture(e.pointerId); } catch (_) {}
-      this.lastAng = this.angleOf(e).a; this.targetPos = this.pos; this.touch = true; this.force = null;
+      this.lastAng = this.angleOf(e).a; this.touch = true; this.post({ t: 'touch', on: true });
     });
     cv.addEventListener('pointermove', e => {
       if (e.pointerId !== this.pid) return;
@@ -451,10 +540,9 @@ class Deck {
       let d = a - this.lastAng; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI;
       this.lastAng = a;
       if (r < 0.12) return;                       // too close to the spindle to read reliably
-      this.targetPos += d / OMEGA * ctx.sampleRate;
-      if (!this.loop) this.targetPos = Math.max(0, Math.min(this.len - 1, this.targetPos));
+      this.post({ t: 'nudge', d: d / OMEGA * ctx.sampleRate });
     });
-    const up = e => { if (e.pointerId !== this.pid) return; this.pid = null; this.touch = false; };
+    const up = e => { if (e.pointerId !== this.pid) return; this.pid = null; this.touch = false; this.post({ t: 'touch', on: false }); };
     cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); cv.addEventListener('lostpointercapture', up);
   }
 
@@ -465,56 +553,20 @@ class Deck {
   }
 
   load(buf, name) {
-    this.ch = [buf.getChannelData(0), buf.numberOfChannels > 1 ? buf.getChannelData(1) : buf.getChannelData(0)];
-    this.len = buf.length; this.pos = 0; this.targetPos = 0; this.force = null;
+    const a = buf.getChannelData(0).slice(), b = buf.numberOfChannels > 1 ? buf.getChannelData(1).slice() : a;
+    const ch = [a, b];
+    this.post({ t: 'load', ch }, b === a ? [a.buffer] : [a.buffer, b.buffer]);
+    this.len = buf.length; this.pos = 0;
     this.name = name; this.tName.textContent = name; this.discImg = null; this.lastSec = -1;
   }
 
   togglePlay() {
     if (!this.len) { toast(`Deck ${this.L} is empty — record something first`); return; }
-    if (!this.loop && this.pos >= this.len - 2) { this.pos = 0; this.targetPos = 0; }
-    this.playing = !this.playing; this.updPlay();
+    this.playing = !this.playing; this.post({ t: 'play', on: this.playing }); this.updPlay();
   }
   updPlay() { this.bPlay.textContent = this.playing ? '❚❚ PAUSE' : '▶ PLAY'; this.bPlay.classList.toggle('on', this.playing); }
 
-  doForce(seq) { if (!this.len) return false; this.force = { t0: now(), seq }; return true; }
-
-  process(e) {
-    const L = e.outputBuffer.getChannelData(0), R = e.outputBuffer.getChannelData(1), n = L.length;
-    if (!this.len) { L.fill(0); R.fill(0); return; }
-    const sr = ctx.sampleRate, c0 = this.ch[0], c1 = this.ch[1], len = this.len, loop = this.loop;
-    let forced = null;
-    if (this.force) {
-      const el = ctx.currentTime - this.force.t0; let acc = 0;
-      for (const s of this.force.seq) { if (el < acc + s.d) { forced = s.r; break; } acc += s.d; }
-      if (forced === null) this.force = null;
-    }
-    const touching = this.touch, tgt = this.targetPos, motor = this.playing ? this.pitch : 0;
-    const kFast = 1 - Math.exp(-1 / (0.006 * sr));
-    const kMotor = 1 - Math.exp(-1 / ((this.playing ? 0.09 : 0.28) * sr));   // spin-up vs. brake
-    const lag = 0.012 * sr;
-    let pos = this.pos, rate = this.rate, ended = false;
-    for (let j = 0; j < n; j++) {
-      let want, k;
-      if (forced !== null) { want = forced; k = kFast; }
-      else if (touching) { want = Math.max(-14, Math.min(14, (tgt - pos) / lag)); k = kFast; }
-      else { want = motor; k = kMotor; }
-      rate += (want - rate) * k;
-      pos += rate;
-      let ip;
-      if (loop) ip = mod(pos, len);
-      else {
-        if (pos >= len - 1) { pos = len - 1; if (!touching && forced === null && rate > 0) { rate = 0; ended = true; } }
-        else if (pos < 0) { pos = 0; if (rate < 0) rate = 0; }
-        ip = pos;
-      }
-      const i0 = Math.floor(ip), fr = ip - i0, i1 = i0 + 1 < len ? i0 + 1 : (loop ? 0 : i0);
-      L[j] = c0[i0] + (c0[i1] - c0[i0]) * fr;
-      R[j] = c1[i0] + (c1[i1] - c1[i0]) * fr;
-    }
-    this.pos = pos; this.rate = rate;
-    if (ended && this.playing) { this.playing = false; this.updPlay(); }
-  }
+  doForce(seq) { if (!this.len) return false; this.post({ t: 'force', t0: ctx.currentTime, seq }); return true; }
 
   buildDisc() {
     const S = this.cv.width, R = S / 2, c = document.createElement('canvas'); c.width = c.height = S;
@@ -579,8 +631,9 @@ class Deck {
   }
 }
 
+
 function updateXfade() {
-  if (!ctx) return;
+  if (!ctx || !decks.length) return;
   const x = $('#xf').value / 100;
   decks[0].xf.gain.setTargetAtTime(Math.cos(x * Math.PI / 2), now(), 0.01);
   decks[1].xf.gain.setTargetAtTime(Math.sin(x * Math.PI / 2), now(), 0.01);
@@ -1398,8 +1451,14 @@ $('#power').onclick = () => {
   try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
   try { const a = new Audio(silentWavURL()); a.play().catch(() => {}); } catch (_) {}   // lets iPhone play through the silent switch
   initAudio(); ctx.resume();
-  renderPads(); $('#start').remove(); getDownloads();
-  requestAnimationFrame(frame);
+  $('#power').textContent = 'STARTING…'; $('#power').disabled = true;
+  loadWorklet().then(ok => {
+    workletOK = ok;
+    decks = [new Deck(0, $('#deckA'), '#22d3ee'), new Deck(1, $('#deckB'), '#f472b6')];
+    updateXfade();
+    renderPads(); $('#start').remove(); getDownloads();
+    requestAnimationFrame(frame);
+  });
 };
 document.addEventListener('pointerdown', () => { if (ctx && ctx.state !== 'running') ctx.resume(); }, true);
 </script>
