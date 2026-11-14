@@ -190,6 +190,19 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
 .sheet .opt .h{font-family:Oxanium,sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--text)}
 .sheet button.main{background:var(--a);color:#000;border-color:var(--a);font-size:14px;padding:12px}
 .sheet button.sec{font-size:13px;padding:11px}
+.saverow{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+.saverow button{padding:11px 4px;font-size:11.5px}
+.savebar{display:grid;grid-template-columns:1fr auto;gap:6px}
+.savebar input{font-family:Inter,sans-serif;font-size:15px;color:var(--text);background:#0f0f15;border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-width:0;-webkit-user-select:text;user-select:text}
+.savebar button{padding:11px 16px}
+.beatlist{display:flex;flex-direction:column;gap:6px;max-height:42vh;overflow:auto}
+.bitem{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;padding:8px 9px;border:1px solid var(--line);border-radius:10px;background:#181822}
+.bitem .bn{font-family:Oxanium,sans-serif;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bitem .bm{font-size:11px;color:var(--dim);margin-top:2px}
+.bitem button{padding:8px 10px;font-size:11px}
+.bitem button.load{background:var(--a);color:#000;border-color:var(--a)}
+.bitem button.sure{background:var(--rec);color:#fff;border-color:var(--rec)}
+.row2b{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;background:#eeeef6;color:#0a0a0f;font-size:13px;font-weight:600;padding:10px 14px;border-radius:10px;z-index:60;transition:.2s;max-width:92vw;text-align:center;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -275,6 +288,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
         <button id="undoBtn">UNDO</button>
         <button id="clearBtn">CLEAR</button>
       </div>
+      <div class="saverow"><button id="saveBeatBtn">💾 SAVE BEAT</button><button id="myBeatsBtn">📂 MY BEATS</button></div>
       <div class="beatrow2">
         <div class="sl"><span>TEMPO</span><input id="bpm" type="range" min="70" max="160" value="92"></div>
         <div class="sl"><span>VOLUME</span><input id="beatVol" type="range" min="0" max="100" value="70"></div>
@@ -301,6 +315,18 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
     </section>
   </div>
 </div>
+
+<div class="sheet hidden" id="beatsSheet">
+  <div class="box">
+    <h3>💾 MY BEATS</h3>
+    <div class="savebar"><input id="beatName" type="text" maxlength="40" placeholder="Name this beat" autocomplete="off"><button class="main" id="beatSaveNow">SAVE</button></div>
+    <div id="beatList" class="beatlist"></div>
+    <div class="row2b"><button class="sec" id="beatExport">⬇ EXPORT FILE</button><button class="sec" id="beatImport">⬆ IMPORT FILE</button></div>
+    <p>Saves the drums, notes, pad hits, tempo, loop length and key. Pad <i>recordings</i> aren't stored, so put sounds back on the same pads to hear them. Beats are kept in this browser. Use <b style="color:var(--text)">Export</b> to keep a copy or move it to another device.</p>
+    <button class="sec" id="beatsClose">CLOSE</button>
+  </div>
+</div>
+<input id="beatFile" type="file" accept=".json,application/json" hidden>
 
 <div class="sheet hidden" id="iosSheet">
   <div class="box">
@@ -1028,7 +1054,7 @@ const emptyLists = n => Array.from({ length: n }, () => []);
 const pat = {}; let padSteps = emptyLists(16); let noteSteps = emptyLists(16);
 const hist = [], stepQ = [], recent = [], cells = {};
 
-function snapshot() { hist.push(JSON.stringify({ pat, padSteps, noteSteps, bars })); if (hist.length > 60) hist.shift(); }
+function snapshot() { hist.push(JSON.stringify({ pat, padSteps, noteSteps, bars, style, bpm })); if (hist.length > 60) hist.shift(); }
 function loadStyle(k) { const B = BEATS[k]; DRUM_ROWS.forEach(r => pat[r] = Array.from({ length: LEN }, (_, i) => B[r][i % 16] === 'x')); }
 loadStyle(style);
 
@@ -1216,7 +1242,10 @@ $('#undoBtn').onclick = () => {
   const st = JSON.parse(hist.pop());
   bars = st.bars || 1; LEN = bars * 16; if (viewBar >= bars) viewBar = 0;
   DRUM_ROWS.forEach(r => pat[r] = st.pat[r]); padSteps = st.padSteps;
-  noteSteps = st.noteSteps || emptyLists(LEN); updateGrid();
+  noteSteps = st.noteSteps || emptyLists(LEN);
+  if (st.style && BEATS[st.style]) { style = st.style; document.querySelectorAll('#beatStyles button').forEach(x => x.classList.toggle('on', x.dataset.s === style)); }
+  if (st.bpm) { $('#bpm').value = st.bpm; setBpm(); }
+  updateGrid();
 };
 $('#clearBtn').onclick = () => {
   snapshot(); DRUM_ROWS.forEach(r => pat[r] = Array(LEN).fill(false)); padSteps = emptyLists(LEN);
@@ -1361,6 +1390,123 @@ function noteOff(id) {
 const KB = 'zxcvbnm,asdfghjkqwertyui';
 document.addEventListener('keydown', e => { if (e.repeat || e.metaKey || e.ctrlKey || e.target.tagName === 'SELECT') return; const i = KB.indexOf(e.key.toLowerCase()); if (i >= 0) noteOn(i, 'k' + i, noteKeys[i]); });
 document.addEventListener('keyup', e => { const i = KB.indexOf(e.key.toLowerCase()); if (i >= 0) noteOff('k' + i); });
+
+/* ---------- saved beats ---------- */
+const BEATS_KEY = 'micdecks.beats', AUTO_KEY = 'micdecks.autosave';
+function beatState(name) {
+  const p = {}; DRUM_ROWS.forEach(r => p[r] = pat[r].map(x => x ? 'x' : '.').join(''));
+  return { v: 1, name, savedAt: Date.now(), style, bpm, bars, pat: p, padSteps, noteSteps,
+           keys: { inst, keyRoot, scaleName, octShift } };
+}
+function applyBeatState(st) {
+  if (!st || !st.pat) throw new Error('not a Mic Decks beat');
+  const nb = [1, 2, 4, 8].includes(+st.bars) ? +st.bars : 1, n = nb * 16;
+  const fit = (arr, mk) => Array.from({ length: n }, (_, i) => (Array.isArray(arr) && arr.length) ? mk(arr[i % arr.length]) : mk(null));
+  const newPat = {};
+  DRUM_ROWS.forEach(r => { const str = String(st.pat[r] || ''); newPat[r] = Array.from({ length: n }, (_, i) => str.length ? str[i % str.length] === 'x' : false); });
+  const newPads = fit(st.padSteps, a => Array.isArray(a) ? a.filter(x => Number.isInteger(x) && x >= 0 && x < 8) : []);
+  const newNotes = fit(st.noteSteps, a => Array.isArray(a) ? a.filter(o => o && INST[o.inst] && Number.isFinite(o.m)).map(o => ({ m: o.m, inst: o.inst, len: Math.max(1, Math.min(n, o.len | 0 || 1)) })) : []);
+  bars = nb; LEN = n; step = step % LEN; viewBar = 0;
+  DRUM_ROWS.forEach(r => pat[r] = newPat[r]); padSteps = newPads; noteSteps = newNotes;
+  if (BEATS[st.style]) { style = st.style; document.querySelectorAll('#beatStyles button').forEach(x => x.classList.toggle('on', x.dataset.s === style)); }
+  if (st.bpm >= 70 && st.bpm <= 160) { $('#bpm').value = st.bpm; setBpm(); }
+  const k = st.keys;
+  if (k) {
+    if (INST[k.inst]) inst = k.inst;
+    if (k.keyRoot >= 0 && k.keyRoot < 12) keyRoot = k.keyRoot;
+    if (SCALES[k.scaleName]) scaleName = k.scaleName;
+    if (Math.abs(k.octShift) <= 3) octShift = k.octShift;
+    $('#keySel').value = keyRoot; $('#scaleSel').value = scaleName;
+    document.querySelectorAll('#instSel button').forEach(x => x.classList.toggle('on', x.dataset.i === inst));
+    layoutKeys();
+  }
+  updateGrid();
+}
+function readBeats() { try { const v = JSON.parse(localStorage.getItem(BEATS_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
+function writeBeats(list) {
+  try { localStorage.setItem(BEATS_KEY, JSON.stringify(list)); return true; }
+  catch (_) { toast('Couldn’t save here — browser storage is blocked or full. Use EXPORT FILE instead.'); return false; }
+}
+
+// autosave the work in progress so a reload doesn't lose it
+let autoT = null;
+function scheduleAutosave() { clearTimeout(autoT); autoT = setTimeout(() => { try { localStorage.setItem(AUTO_KEY, JSON.stringify(beatState('Last session'))); } catch (_) {} }, 600); }
+const _updateGrid = updateGrid;
+updateGrid = function () { _updateGrid(); scheduleAutosave(); };
+$('#bpm').addEventListener('input', scheduleAutosave);
+try { const a = JSON.parse(localStorage.getItem(AUTO_KEY) || 'null'); if (a) applyBeatState(a); } catch (_) {}
+
+// sheet UI
+const bSheet = $('#beatsSheet');
+function openBeats(focusName) {
+  renderBeatList(); bSheet.classList.remove('hidden');
+  if (focusName) { const i = $('#beatName'); setTimeout(() => { i.focus(); i.select(); }, 50); }
+}
+$('#saveBeatBtn').onclick = () => openBeats(true);
+$('#myBeatsBtn').onclick = () => openBeats(false);
+$('#beatsClose').onclick = () => bSheet.classList.add('hidden');
+bSheet.addEventListener('click', e => { if (e.target === bSheet) bSheet.classList.add('hidden'); });
+
+function saveBeatNamed() {
+  const list = readBeats();
+  let name = $('#beatName').value.trim();
+  if (!name) { let n = list.length + 1; while (list.some(b => b.name === 'Beat ' + n)) n++; name = 'Beat ' + n; }
+  const st = beatState(name), i = list.findIndex(b => b.name === name);
+  if (i >= 0) list[i] = st; else list.unshift(st);
+  if (writeBeats(list)) { toast(i >= 0 ? `Updated “${name}”` : `Saved “${name}”`); $('#beatName').value = name; renderBeatList(); }
+}
+$('#beatSaveNow').onclick = saveBeatNamed;
+$('#beatName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveBeatNamed(); } });
+
+function renderBeatList() {
+  const el = $('#beatList'), list = readBeats(); el.innerHTML = '';
+  if (!list.length) { el.innerHTML = '<p class="empty">No saved beats yet — name your beat above and tap SAVE.</p>'; return; }
+  list.forEach((b, i) => {
+    const row = document.createElement('div'); row.className = 'bitem';
+    const when = new Date(b.savedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    row.innerHTML = `<div style="min-width:0"><div class="bn">${esc(b.name)}</div><div class="bm">${b.bars || 1} bar${(b.bars || 1) > 1 ? 's' : ''} · ${b.bpm} BPM · ${esc(b.style || '')} · ${when}</div></div><button class="load">LOAD</button><button class="del">✕</button>`;
+    row.querySelector('.load').onclick = () => {
+      snapshot();
+      try { applyBeatState(b); toast(`Loaded “${b.name}” — UNDO goes back`); bSheet.classList.add('hidden'); $('#beatName').value = b.name; }
+      catch (e) { hist.pop(); toast('That beat couldn’t be loaded'); }
+    };
+    const del = row.querySelector('.del'); let armed = null;
+    del.onclick = () => {
+      if (!armed) { del.textContent = 'DELETE?'; del.classList.add('sure'); armed = setTimeout(() => { armed = null; del.textContent = '✕'; del.classList.remove('sure'); }, 3000); return; }
+      clearTimeout(armed); const l = readBeats(); l.splice(i, 1); writeBeats(l); renderBeatList(); toast(`Deleted “${b.name}”`);
+    };
+    el.appendChild(row);
+  });
+}
+
+// export / import as a .json file
+$('#beatExport').onclick = async () => {
+  const name = $('#beatName').value.trim() || 'My beat';
+  const json = JSON.stringify(beatState(name), null, 1);
+  const base = name.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase(), filename = (base || 'beat') + '.json';
+  const dl = await getDownloads();
+  if (dl) {
+    try { await dl.save({ filename, data: json }); toast('Exported ' + filename); }
+    catch (e) { if (!e || e.code !== 'declined') toast('Couldn’t export: ' + ((e && (e.message || e.code)) || 'unknown error')); }
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast('Exported ' + filename);
+};
+$('#beatImport').onclick = () => $('#beatFile').click();
+$('#beatFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const st = JSON.parse(await f.text());
+    snapshot(); applyBeatState(st);
+    const name = (st.name && String(st.name).slice(0, 40)) || f.name.replace(/\.json$/i, '');
+    const list = readBeats(), i = list.findIndex(b => b.name === name), saved = { ...beatState(name) };
+    if (i >= 0) list[i] = saved; else list.unshift(saved);
+    writeBeats(list); renderBeatList(); toast(`Imported “${name}”`);
+  } catch (err) { toast('That file isn’t a Mic Decks beat'); }
+};
 
 /* ---------- mix recorder ---------- */
 let mixRec = null, mixT0 = 0, mixCount = 0;
