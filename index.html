@@ -125,7 +125,12 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
 .bars button.view.play::after{background:#000}
 .grid{display:flex;flex-direction:column;gap:3px;margin:2px 0 10px}
 .grow{display:grid;grid-template-columns:40px repeat(16,1fr);gap:2px;align-items:center}
-.grow .rl{font-family:Oxanium,sans-serif;font-size:9px;letter-spacing:.06em;color:var(--rc);font-weight:700}
+.grow .rl{font-family:Oxanium,sans-serif;font-size:8.5px;letter-spacing:.04em;color:var(--rc);font-weight:700;background:none;border:none;padding:0;text-align:left;height:24px;white-space:nowrap;overflow:hidden}
+.grow.muted .rl{text-decoration:line-through;opacity:.45}
+.grow.muted .cell.on{background:#3a3a4a}
+.seg.inst8{grid-template-columns:repeat(4,1fr)}
+.seg.inst8 button{color:var(--ic)}
+.seg.inst8 button.on{background:var(--ic);color:#000;border-color:var(--ic)}
 .cell{height:26px;border-radius:4px;background:#20202b;border:none;padding:0;font-size:9px;color:#000;min-width:0;transition:none}
 .cell.g{background:#2a2a38}
 .cell.on{background:var(--rc)}
@@ -190,7 +195,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
 .sheet .opt .h{font-family:Oxanium,sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--text)}
 .sheet button.main{background:var(--a);color:#000;border-color:var(--a);font-size:14px;padding:12px}
 .sheet button.sec{font-size:13px;padding:11px}
-.saverow{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+.saverow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px}
 .saverow button{padding:11px 4px;font-size:11.5px}
 .savebar{display:grid;grid-template-columns:1fr auto;gap:6px}
 .savebar input{font-family:Inter,sans-serif;font-size:15px;color:var(--text);background:#0f0f15;border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-width:0;-webkit-user-select:text;user-select:text}
@@ -203,8 +208,77 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
 .bitem button.load{background:var(--a);color:#000;border-color:var(--a)}
 .bitem button.sure{background:var(--rec);color:#fff;border-color:var(--rec)}
 .row2b{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.exp{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:#181822}
+.exp .h{font-family:Oxanium,sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--dim)}
+.exprow{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;font-size:12px;color:var(--dim)}
+.seg.reps{grid-template-columns:repeat(4,1fr);margin:0}
+.sheet p.small{font-size:11.5px}
+.sheet .box{max-height:92vh;overflow:auto}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;background:#eeeef6;color:#0a0a0f;font-size:13px;font-weight:600;padding:10px 14px;border-radius:10px;z-index:60;transition:.2s;max-width:92vw;text-align:center;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---- layout: tabs + compact mobile ---- */
+.topbar{position:sticky;top:0;z-index:20;background:var(--bg);margin:-10px -10px 0;padding:8px 10px 6px;display:flex;flex-direction:column;gap:7px;border-bottom:1px solid #1d1d28}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tabs button{padding:10px 4px;font-size:12.5px;letter-spacing:.08em;border-radius:10px;background:#15151d}
+.tabs button.on{background:linear-gradient(90deg,var(--a),var(--b));color:#05050a;border-color:transparent}
+.hdrbeat{padding:8px 10px;font-size:11px;border-radius:20px;flex:none}
+.hdrbeat.on{background:var(--ok);color:#000;border-color:var(--ok)}
+header{gap:7px}
+header .logo{font-size:18px}
+.helpbtn{width:32px;height:32px;padding:0;border-radius:50%;font-size:14px;flex:none}
+body.help .helpbtn{background:var(--text);color:#000}
+.hint{display:none}
+body.help .hint{display:block}
+.view{display:flex;flex-direction:column;gap:8px}
+.view .col{display:flex;flex-direction:column;gap:8px}
+.mixgrid{display:flex;flex-direction:column;gap:8px}
+.app{gap:8px}
+.panel{padding:8px}
+.ptitle{margin-bottom:6px}
+/* compact recorder: one row */
+#recPanel{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center}
+#recPanel .ptitle{display:none}
+#recPanel .recrow{gap:8px;min-width:0}
+#recPanel .recbtn{width:auto;height:40px;flex-direction:row;padding:0 14px;border-radius:20px;font-size:12px;gap:7px}
+#recPanel .recbtn .rdot{width:13px;height:13px}
+#recPanel .recbtn.on .rdot{width:11px;height:11px}
+#recPanel .recinfo{gap:4px}
+#recPanel .recstat{font-size:10.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recPanel .meter{height:6px}
+#recPanel .alt{margin:0;display:flex;gap:5px}
+#recPanel .alt button{padding:9px 8px;font-size:10px;white-space:nowrap}
+#recPanel .note,#recPanel .pending{grid-column:1/-1;margin-top:0}
+/* compact pads */
+.pads{gap:5px}
+.pad{aspect-ratio:auto;height:52px;padding:5px 7px;border-radius:10px}
+.pad .pn{font-size:9px}
+.pad .pd{display:none}
+.seg{margin-bottom:6px}
+/* compact beat machine */
+.cell{height:22px}
+.grow .rl{height:22px}
+.drums{gap:5px;margin-bottom:6px}
+.drums button{padding:11px 2px}
+.bctl button{padding:10px 2px}
+.saverow{margin-bottom:6px}
+.saverow button{padding:9px 2px;font-size:11px}
+.looprow,.barrow{margin-bottom:6px}
+/* compact instruments */
+.keyrow{margin-bottom:7px}
+.sel select{padding:7px 8px}
+.oct button{padding:7px 0}
+.nk{height:46px;padding-bottom:5px;font-size:10.5px}
+.notes{gap:4px;margin-bottom:6px}
+@media (min-width:760px){
+  .view{display:grid;grid-template-columns:1fr 1fr;align-items:start}
+  .view.hidden{display:none!important}
+  #view-beat-maker #beatPanel{grid-row:span 2}
+  #view-mixer{grid-template-columns:1fr}
+  #view-mixer .mixgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
+  .pad{height:60px}
+  .nk{height:52px}
+}
 </style>
 </head>
 <body>
@@ -219,45 +293,22 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
 </div>
 
 <div class="app">
+  <div class="topbar">
   <header>
     <div class="logo">MIC<span>DE</span><em>CKS</em></div>
     <div class="vu" title="Master level"><i id="vuMaster"></i></div>
+    <button id="hdrBeat" class="hdrbeat" aria-label="Start or stop the beat">▶ BEAT</button>
+    <button id="helpBtn" class="helpbtn" aria-label="Show tips">?</button>
     <button id="mixRecBtn" class="mixrec"><b class="dot"></b><span id="mixRecLbl">REC MIX</span></button>
   </header>
+    <nav class="tabs" role="tablist">
+      <button data-tab="beat-maker" role="tab" class="on">🎛 BEAT MAKER</button>
+      <button data-tab="mixer" role="tab">🎧 MIXER</button>
+    </nav>
+  </div>
 
-  <section class="decks" id="decks"></section>
-
-  <section class="panel xfade">
-    <span class="tag" style="background:var(--a)">A</span>
-    <input id="xf" type="range" min="0" max="100" value="50" aria-label="Crossfader">
-    <span class="tag bb">B</span>
-  </section>
-
-  <div class="grid2">
-    <section class="panel">
-      <div class="ptitle">Mic recorder<span class="sp"></span><b id="recTime">0:00</b></div>
-      <div class="recrow">
-        <button id="recBtn" class="recbtn" aria-label="Record"><span class="rdot"></span><span id="recLbl">REC</span></button>
-        <div class="recinfo">
-          <div class="recstat" id="recStat">Tap <strong>REC</strong> to record, tap again to stop. Each take drops onto the next free pad and any empty deck.</div>
-          <div class="meter"><i id="micLvl"></i></div>
-        </div>
-      </div>
-      <div id="micNote" class="note hidden"></div>
-      <div id="pending" class="pending hidden">
-        <span id="pendName">Your clip is ready</span>
-        <button id="pendBtn">▶ TAP TO LOAD SOUND</button>
-      </div>
-      <div class="alt">
-        <button id="phoneRec">🎙 PHONE RECORDER</button>
-        <button id="importBtn">📁 IMPORT AUDIO</button>
-      </div>
-      <input id="fileCap" type="file" accept="audio/*" capture hidden>
-      <input id="fileVM" type="file" accept="audio/*,.m4a,.mp3,.wav,.aac,.caf" hidden>
-      <input id="fileCam" type="file" accept="video/*" capture="user" hidden>
-      <input id="fileImp" type="file" accept="audio/*,video/*" hidden>
-    </section>
-
+  <div class="view" id="view-beat-maker">
+    <div class="col">
     <section class="panel" id="padPanel">
       <div class="ptitle">Sample pads<span class="sp"></span>tap a pad to</div>
       <div class="seg" id="padMode">
@@ -269,12 +320,8 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
       <div class="pads" id="pads"></div>
     </section>
 
-    <section class="panel">
-      <div class="ptitle">DJ sounds</div>
-      <div class="fx" id="fx"></div>
-    </section>
-
-    <section class="panel">
+    </div>
+    <section class="panel" id="beatPanel">
       <div class="ptitle">Beat machine<span class="sp"></span><b id="bpmLbl">92 BPM</b></div>
       <div class="seg five" id="beatStyles"></div>
       <div class="looprow"><span class="lbl">LOOP</span><div class="lens" id="lenSel"></div></div>
@@ -288,17 +335,16 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
         <button id="undoBtn">UNDO</button>
         <button id="clearBtn">CLEAR</button>
       </div>
-      <div class="saverow"><button id="saveBeatBtn">💾 SAVE BEAT</button><button id="myBeatsBtn">📂 MY BEATS</button></div>
+      <div class="saverow"><button id="saveBeatBtn">💾 SAVE</button><button id="myBeatsBtn">📂 MY BEATS</button><button id="exportBtn">⬇ EXPORT</button></div>
       <div class="beatrow2">
         <div class="sl"><span>TEMPO</span><input id="bpm" type="range" min="70" max="160" value="92"></div>
         <div class="sl"><span>VOLUME</span><input id="beatVol" type="range" min="0" max="100" value="70"></div>
       </div>
       <p class="hint"><b>Build it up:</b> tap squares to add or remove hits, or tap <b>● LAYER</b> and play the drum buttons or sample pads in time. Each hit snaps to the beat and stays in the loop. Hold <b>ROLL</b> for a snare build-up. <b>UNDO</b> removes the last thing you added. Set <b>LOOP</b> to 2, 4 or 8 bars for longer patterns: tap the bar numbers to edit each bar, and use <b>COPY → ALL</b> to copy the bar you're on into every bar, then change one bar for a fill.</p>
     </section>
-
     <section class="panel" id="instPanel">
       <div class="ptitle">Instruments<span class="sp"></span><b id="instLbl">PIANO</b></div>
-      <div class="seg six" id="instSel"></div>
+      <div class="seg inst8" id="instSel"></div>
       <div class="keyrow">
         <label class="sel"><span>KEY</span><select id="keySel"></select></label>
         <label class="sel"><span>SCALE</span><select id="scaleSel"></select></label>
@@ -308,11 +354,48 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
       <div class="sl"><span>VOLUME</span><input id="instVol" type="range" min="0" max="100" value="80"></div>
       <p class="hint">Every key fits the scale, so whatever you play sounds right — the purple keys are the home note. Each row is one octave above the row below it: the key straight above any key is the same note, higher. Notes lower than the bottom row? Tap <b>−</b> — your tune moves up one row, same columns. Need a note outside the key? Pick <b>CHROMATIC</b> to get all 12 notes. Hold a key to let it ring. With <b>● LAYER</b> on, your notes snap to the beat and loop (they show on the <b>NOTES</b> row).</p>
     </section>
+  </div>
 
-    <section class="panel wide">
+  <div class="view hidden" id="view-mixer">
+    <section class="panel" id="recPanel">
+      <div class="ptitle">Mic recorder<span class="sp"></span><b id="recTime">0:00</b></div>
+      <div class="recrow">
+        <button id="recBtn" class="recbtn" aria-label="Record"><span class="rdot"></span><span id="recLbl">REC</span></button>
+        <div class="recinfo">
+          <div class="recstat" id="recStat">Record → lands on a pad</div>
+          <div class="meter"><i id="micLvl"></i></div>
+        </div>
+      </div>
+      <div id="micNote" class="note hidden"></div>
+      <div id="pending" class="pending hidden">
+        <span id="pendName">Your clip is ready</span>
+        <button id="pendBtn">▶ TAP TO LOAD SOUND</button>
+      </div>
+      <div class="alt">
+        <button id="phoneRec">🎙 PHONE</button>
+        <button id="importBtn">📁 IMPORT</button>
+      </div>
+      <input id="fileCap" type="file" accept="audio/*" capture hidden>
+      <input id="fileVM" type="file" accept="audio/*,.m4a,.mp3,.wav,.aac,.caf" hidden>
+      <input id="fileCam" type="file" accept="video/*" capture="user" hidden>
+      <input id="fileImp" type="file" accept="audio/*,video/*" hidden>
+    </section>
+  <section class="decks" id="decks"></section>
+  <section class="panel xfade">
+    <span class="tag" style="background:var(--a)">A</span>
+    <input id="xf" type="range" min="0" max="100" value="50" aria-label="Crossfader">
+    <span class="tag bb">B</span>
+  </section>
+    <div class="mixgrid">
+    <section class="panel" id="fxPanel">
+      <div class="ptitle">DJ sounds</div>
+      <div class="fx" id="fx"></div>
+    </section>
+    <section class="panel" id="mixPanel">
       <div class="ptitle">Your mixes</div>
       <div id="mixes"><p class="empty" id="mixEmpty">Tap <b>REC MIX</b> at the top, perform your set, then tap it again. Your mix lands here to replay, save, or drop onto a pad to layer more on top.</p></div>
     </section>
+    </div>
   </div>
 </div>
 
@@ -321,8 +404,14 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
     <h3>💾 MY BEATS</h3>
     <div class="savebar"><input id="beatName" type="text" maxlength="40" placeholder="Name this beat" autocomplete="off"><button class="main" id="beatSaveNow">SAVE</button></div>
     <div id="beatList" class="beatlist"></div>
-    <div class="row2b"><button class="sec" id="beatExport">⬇ EXPORT FILE</button><button class="sec" id="beatImport">⬆ IMPORT FILE</button></div>
-    <p>Saves the drums, notes, pad hits, tempo, loop length and key, plus your pad recordings and which sound is on each deck. Beats are kept in this browser. Use <b style="color:var(--text)">Export</b> to keep a copy (sounds included) or move it to another device.</p>
+    <div class="exp" id="exportBox">
+      <div class="h">EXPORT THIS BEAT</div>
+      <div class="exprow"><span>Repeat loop</span><div class="seg reps" id="expReps"><button data-r="1">1×</button><button data-r="2" class="on">2×</button><button data-r="4">4×</button><button data-r="8">8×</button></div></div>
+      <div class="row2b"><button class="main" id="beatExportAudio">🎵 AUDIO FILE</button><button class="sec" id="beatExport">{ } BEAT FILE .json</button></div>
+      <p class="small">Audio file plays anywhere (music apps, messages, video editors). Beat file opens back in Mic Decks for more editing.</p>
+    </div>
+    <button class="sec" id="beatImport">⬆ IMPORT BEAT FILE (.json)</button>
+    <p class="small">Saving keeps the drums, notes, pad hits, mutes, tempo, loop length and key, plus your pad recordings and which sound is on each deck. Beats stay in this browser; a beat file moves them to another device.</p>
     <button class="sec" id="beatsClose">CLOSE</button>
   </div>
 </div>
@@ -356,7 +445,23 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
-const OMEGA = 2 * Math.PI * (100 / 3) / 60;           // 33⅓ rpm in rad/s
+const OMEGA = 2 * Math.PI * (100 / 3) / 60;
+
+/* ---------- tabs ---------- */
+const TABS = ['beat-maker', 'mixer'];
+function showTab(name) {
+  if (!TABS.includes(name)) name = 'beat-maker';
+  TABS.forEach(t => $('#view-' + t).classList.toggle('hidden', t !== name));
+  document.querySelectorAll('.tabs button').forEach(b => { const on = b.dataset.tab === name; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  try { localStorage.setItem('micdecks.tab', name); } catch (_) {}
+  if (location.hash.slice(1) !== name) { try { history.replaceState(null, '', '#' + name); } catch (_) { location.hash = name; } }
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+(function () { let t = location.hash.slice(1); if (!TABS.includes(t)) { try { t = localStorage.getItem('micdecks.tab'); } catch (_) {} } showTab(t || 'beat-maker'); })();
+$('#helpBtn').onclick = () => { const on = document.body.classList.toggle('help'); toast(on ? 'Tips shown under each section' : 'Tips hidden'); };
+           // 33⅓ rpm in rad/s
 const mod = (a, n) => ((a % n) + n) % n;
 const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -752,10 +857,10 @@ function trimNormalize(data, sr) {
 function micBlocked(why) {
   const n = $('#micNote');
   n.innerHTML = IS_IOS
-    ? `Live mic isn't available ${why}. Tap <b>🎙 VOICE MEMO</b> below — record in Voice Memos, save it to Files, then pick it here. It lands on the pads and decks just the same.`
-    : `Live mic isn't available ${why}. Use <b>🎙 PHONE RECORDER</b> to record a take with your phone, or <b>📁 IMPORT AUDIO</b> to pick a recording — it lands on the pads and decks just the same.`;
+    ? `Live mic isn't available ${why}. Tap <b>🎙 MEMO</b> below — record in Voice Memos, save it to Files, then pick it here. It lands on the pads and decks just the same.`
+    : `Live mic isn't available ${why}. Use <b>🎙 PHONE</b> to record a take with your phone, or <b>📁 IMPORT</b> to pick a recording — it lands on the pads and decks just the same.`;
   n.classList.remove('hidden');
-  if (IS_IOS) sheet.classList.remove('hidden'); else toast('Live mic blocked here — use PHONE RECORDER');
+  if (IS_IOS) sheet.classList.remove('hidden'); else toast('Live mic blocked here — use 🎙 PHONE');
 }
 
 async function toggleRec() {
@@ -871,7 +976,7 @@ async function importFile(file, prefix, fromCamera) {
   }
 }
 const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-if (IS_IOS) $('#phoneRec').textContent = '🎙 VOICE MEMO';
+if (IS_IOS) $('#phoneRec').textContent = '🎙 MEMO';
 const sheet = $('#iosSheet');
 $('#phoneRec').onclick = () => { if (IS_IOS) sheet.classList.remove('hidden'); else $('#fileCap').click(); };
 $('#sheetClose').onclick = () => sheet.classList.add('hidden');
@@ -1051,9 +1156,11 @@ const BEATS = {
 const ROWS = [
   { id: 'k', name: 'KICK',  col: '#fb923c' }, { id: 's', name: 'SNARE', col: '#facc15' },
   { id: 'c', name: 'CLAP',  col: '#4ade80' }, { id: 'h', name: 'HAT',   col: '#22d3ee' },
-  { id: 'o', name: 'OPEN',  col: '#a78bfa' }, { id: 'p', name: 'PADS',  col: '#f472b6' },
-  { id: 'n', name: 'NOTES', col: '#c084fc' }
+  { id: 'o', name: 'OPEN',  col: '#a78bfa' }, { id: 'p', name: 'PADS',  col: '#f472b6' }
 ];
+const INST_ORDER = ['PIANO', 'SYNTH', 'BASS', '808', 'PLUCK', 'STRINGS', 'ORGAN', 'BELL'];
+const INST_COL = { PIANO: '#e5e7eb', SYNTH: '#c084fc', BASS: '#f87171', '808': '#fb7185', PLUCK: '#34d399', STRINGS: '#60a5fa', ORGAN: '#fbbf24', BELL: '#5eead4' };
+let muted = new Set(), noteRowSig = '';
 const DRUM_ROWS = ['k', 's', 'c', 'h', 'o'];
 let style = 'HIP-HOP', bpm = 92, beatOn = false, step = 0, nextT = 0, beatTimer = null;
 let layerOn = false, rolling = false, rollN = 0, curCol = -1;
@@ -1062,7 +1169,7 @@ const emptyLists = n => Array.from({ length: n }, () => []);
 const pat = {}; let padSteps = emptyLists(16); let noteSteps = emptyLists(16);
 const hist = [], stepQ = [], recent = [], cells = {};
 
-function snapshot() { hist.push(JSON.stringify({ pat, padSteps, noteSteps, bars, style, bpm })); if (hist.length > 60) hist.shift(); }
+function snapshot() { hist.push(JSON.stringify({ pat, padSteps, noteSteps, bars, style, bpm, muted: [...muted] })); if (hist.length > 60) hist.shift(); }
 function loadStyle(k) { const B = BEATS[k]; DRUM_ROWS.forEach(r => pat[r] = Array.from({ length: LEN }, (_, i) => B[r][i % 16] === 'x')); }
 loadStyle(style);
 
@@ -1110,25 +1217,49 @@ function setBars(n) {
 }
 
 // grid (shows one bar at a time)
+function makeRow(key, name, col, parent) {
+  const row = document.createElement('div'); row.className = 'grow' + (muted.has(key) ? ' muted' : ''); row.style.setProperty('--rc', col);
+  const lab = document.createElement('button'); lab.className = 'rl'; lab.textContent = name; lab.title = 'Tap to mute / unmute';
+  lab.onclick = () => { if (muted.has(key)) muted.delete(key); else muted.add(key); row.classList.toggle('muted', muted.has(key)); toast(`${name} ${muted.has(key) ? 'muted' : 'on'}`); scheduleAutosaveSafe(); };
+  row.appendChild(lab);
+  cells[key] = [];
+  for (let i = 0; i < 16; i++) {
+    const c = document.createElement('button'); c.className = 'cell' + ((i >> 2) % 2 ? ' g' : '');
+    c.setAttribute('aria-label', `${name} step ${i + 1}`);
+    c.onclick = () => cellTap(key, viewBar * 16 + i);
+    row.appendChild(c); cells[key].push(c);
+  }
+  parent.appendChild(row); return row;
+}
+function scheduleAutosaveSafe() { if (typeof scheduleAutosave === 'function') scheduleAutosave(); }
 (function buildGrid() {
   const g = $('#grid');
-  ROWS.forEach(R => {
-    const row = document.createElement('div'); row.className = 'grow'; row.style.setProperty('--rc', R.col);
-    row.innerHTML = `<span class="rl">${R.name}</span>`;
-    cells[R.id] = [];
-    for (let i = 0; i < 16; i++) {
-      const c = document.createElement('button'); c.className = 'cell' + ((i >> 2) % 2 ? ' g' : '');
-      c.setAttribute('aria-label', `${R.name} step ${i + 1}`);
-      c.onclick = () => cellTap(R.id, viewBar * 16 + i);
-      row.appendChild(c); cells[R.id].push(c);
-    }
-    g.appendChild(row);
-  });
+  ROWS.forEach(R => makeRow(R.id, R.name, R.col, g));
+  const nr = document.createElement('div'); nr.id = 'noteRows'; nr.style.cssText = 'display:flex;flex-direction:column;gap:3px'; g.appendChild(nr);
 })();
+// one row per instrument that has notes, plus the instrument you're playing now
+function usedInsts() {
+  const used = new Set(); noteSteps.forEach(a => a.forEach(n => used.add(n.inst)));
+  try { used.add(inst); } catch (_) {}            // inst is declared further down the page
+  return INST_ORDER.filter(k => used.has(k));
+}
+function syncNoteRows() {
+  const list = usedInsts(), sig = list.join(',') + '|' + [...muted].join(',');
+  if (sig === noteRowSig) return;
+  noteRowSig = sig;
+  Object.keys(cells).filter(k => k.startsWith('n:')).forEach(k => delete cells[k]);
+  const nr = $('#noteRows'); nr.innerHTML = '';
+  list.forEach(k => makeRow('n:' + k, k, INST_COL[k], nr));
+}
 function updateGrid() {
+  syncNoteRows();
+  ROWS.forEach(R => cells[R.id][0].parentNode.classList.toggle('muted', muted.has(R.id)));
   const o = viewBar * 16;
   DRUM_ROWS.forEach(r => cells[r].forEach((c, i) => c.classList.toggle('on', !!pat[r][o + i])));
-  cells.n.forEach((c, i) => { const n = noteSteps[o + i].length; c.classList.toggle('on', n > 0); c.textContent = n > 1 ? n : ''; });
+  Object.keys(cells).filter(k => k.startsWith('n:')).forEach(k => {
+    const I = k.slice(2);
+    cells[k].forEach((c, i) => { const n = noteSteps[o + i].filter(x => x.inst === I).length; c.classList.toggle('on', n > 0); c.textContent = n > 1 ? n : ''; });
+  });
   cells.p.forEach((c, i) => { const a = padSteps[o + i], n = a.length; c.classList.toggle('on', n > 0); c.textContent = n ? (n > 1 ? a[0] + 1 + '+' : a[0] + 1) : ''; });
   barBtns.forEach((b, i) => { b.style.visibility = i < bars ? 'visible' : 'hidden'; b.classList.toggle('view', i === viewBar); b.classList.toggle('play', beatOn && i === playBar); });
   document.querySelectorAll('#lenSel button').forEach(b => b.classList.toggle('on', +b.dataset.n === bars));
@@ -1137,14 +1268,15 @@ function updateGrid() {
   setCol(curCol, true);
 }
 function flashCell(r, gi) {
-  if (Math.floor(gi / 16) !== viewBar) return;
+  if (Math.floor(gi / 16) !== viewBar || !cells[r]) return;
   const c = cells[r][gi % 16]; c.classList.remove('new'); void c.offsetWidth; c.classList.add('new');
 }
 function cellTap(r, i) {
   if (!ctx) return;
-  if (r === 'n') {
-    if (!noteSteps[i].length) { toast('Turn on ● LAYER and play the instrument keys in time to add notes here'); return; }
-    snapshot(); noteSteps[i] = []; updateGrid(); return;
+  if (r.startsWith('n:')) {
+    const I = r.slice(2);
+    if (!noteSteps[i].some(n => n.inst === I)) { toast(`Pick ${I}, turn on ● LAYER and play keys in time to add notes here`); return; }
+    snapshot(); noteSteps[i] = noteSteps[i].filter(n => n.inst !== I); updateGrid(); return;
   }
   if (r === 'p') {
     if (!padSteps[i].length) { toast('Turn on ● LAYER and tap sample pads in time to add them here'); return; }
@@ -1201,10 +1333,10 @@ $('#bpm').oninput = setBpm;
 $('#beatVol').oninput = e => { if (ctx) beatGain.gain.setTargetAtTime(e.target.value / 100, now(), 0.02); };
 
 function playStep(i, t) {
-  DRUM_ROWS.forEach(r => { if (pat[r][i]) drumSound(r, t, r === 'h' && i % 4 === 0 ? 1.1 : 1); });
-  padSteps[i].forEach(pi => { if (pads[pi]) playPad(pi, t); });
+  DRUM_ROWS.forEach(r => { if (pat[r][i] && !muted.has(r)) drumSound(r, t, r === 'h' && i % 4 === 0 ? 1.1 : 1); });
+  if (!muted.has('p')) padSteps[i].forEach(pi => { if (pads[pi]) playPad(pi, t); });
   const spb = 60 / bpm / 4;
-  noteSteps[i].forEach(n => playNote(n.inst, n.m, t, n.len * spb * 0.95));
+  noteSteps[i].forEach(n => { if (!muted.has('n:' + n.inst)) playNote(n.inst, n.m, t, n.len * spb * 0.95); });
   if (rolling) { snare(t, Math.min(0.85, 0.35 + rollN * 0.03), beatGain); rollN++; }
 }
 function schedule() {
@@ -1218,9 +1350,9 @@ function schedule() {
 }
 function setCol(col, force) {
   if (!force && col === curCol) return;
-  ROWS.forEach(R => cells[R.id].forEach(c => c.classList.remove('cur')));
+  Object.values(cells).forEach(a => a.forEach(c => c.classList.remove('cur')));
   curCol = col;
-  if (col >= 0) ROWS.forEach(R => cells[R.id][col].classList.add('cur'));
+  if (col >= 0) Object.values(cells).forEach(a => a[col] && a[col].classList.add('cur'));
 }
 function setCur(gstep) {        // called from the render loop with the step being heard
   if (gstep < 0) { playBar = -1; setCol(-1); updateGrid(); return; }
@@ -1238,8 +1370,10 @@ function setBeat(on) {
   if (beatOn) { step = 0; nextT = now() + 0.06; recent.length = 0; schedule(); beatTimer = setInterval(schedule, 25); }
   else { clearInterval(beatTimer); stepQ.length = 0; setCur(-1); }
   $('#beatBtn').classList.toggle('on', beatOn); $('#beatBtn').textContent = beatOn ? '■ STOP' : '▶ BEAT';
+  $('#hdrBeat').classList.toggle('on', beatOn); $('#hdrBeat').textContent = beatOn ? '■ BEAT' : '▶ BEAT';
 }
 $('#beatBtn').onclick = () => { if (ctx) setBeat(!beatOn); };
+$('#hdrBeat').onclick = () => { if (ctx) setBeat(!beatOn); };
 $('#layerBtn').onclick = () => {
   if (!ctx) return;
   layerOn = !layerOn; $('#layerBtn').classList.toggle('on', layerOn);
@@ -1248,6 +1382,7 @@ $('#layerBtn').onclick = () => {
 $('#undoBtn').onclick = () => {
   if (!hist.length) { toast('Nothing to undo'); return; }
   const st = JSON.parse(hist.pop());
+  if (st.muted) muted = new Set(st.muted);
   bars = st.bars || 1; LEN = bars * 16; if (viewBar >= bars) viewBar = 0;
   DRUM_ROWS.forEach(r => pat[r] = st.pat[r]); padSteps = st.padSteps;
   noteSteps = st.noteSteps || emptyLists(LEN);
@@ -1290,6 +1425,11 @@ const INST = {
   PLUCK:   { oct: 4, peak: 0.3, a: 0.002, decay: 0.22, sus: 0, r: 0.1, make(f, t, out) {
     const lp = lpf(out, 7000, 2); lp.frequency.setValueAtTime(7000, t); lp.frequency.setTargetAtTime(350, t, 0.07);
     return [osc('sawtooth', f, t, lp), osc('square', f * 2, t, lp, 0.25)]; } },
+  ORGAN:   { oct: 4, peak: 0.16, a: 0.012, decay: 0, sus: 1, r: 0.08, make(f, t, out) {
+    const lp = lpf(out, 5200);
+    return [osc('sine', f, t, lp), osc('sine', f * 2, t, lp, 0.5), osc('sine', f * 3, t, lp, 0.3), osc('sine', f * 4, t, lp, 0.15), osc('sine', f / 2, t, lp, 0.35)]; } },
+  BELL:    { oct: 5, peak: 0.24, a: 0.002, decay: 0.9, sus: 0, r: 0.5, make(f, t, out) {
+    return [osc('sine', f, t, out), osc('sine', f * 2.76, t, out, 0.45), osc('sine', f * 5.4, t, out, 0.2), osc('triangle', f * 2, t, out, 0.15)]; } },
   STRINGS: { oct: 3, peak: 0.13, a: 0.35, decay: 0, sus: 1, r: 0.7, make(f, t, out) {
     const lp = lpf(out, 1700);
     return [osc('sawtooth', f, t, lp), osc('sawtooth', f, t, lp, 1, 9), osc('sawtooth', f, t, lp, 1, -9), osc('sawtooth', f * 2, t, lp, 0.35)]; } }
@@ -1320,9 +1460,10 @@ const live = {}, noteKeys = [];
 NOTE_NAMES.forEach((n, i) => { const o = document.createElement('option'); o.value = i; o.textContent = n; $('#keySel').appendChild(o); });
 Object.keys(SCALES).forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; $('#scaleSel').appendChild(o); });
 $('#scaleSel').value = scaleName;
-['PIANO', 'SYNTH', 'BASS', '808', 'PLUCK', 'STRINGS'].forEach(k => {
+INST_ORDER.forEach(k => {
   const b = document.createElement('button'); b.textContent = k; b.dataset.i = k; if (k === inst) b.classList.add('on');
-  b.onclick = () => { inst = k; document.querySelectorAll('#instSel button').forEach(x => x.classList.toggle('on', x.dataset.i === k)); octShift = 0; layoutKeys(); };
+  b.style.setProperty('--ic', INST_COL[k]);
+  b.onclick = () => { inst = k; document.querySelectorAll('#instSel button').forEach(x => x.classList.toggle('on', x.dataset.i === k)); octShift = 0; layoutKeys(); updateGrid(); };
   $('#instSel').appendChild(b);
 });
 $('#keySel').onchange = e => { keyRoot = +e.target.value; layoutKeys(); };
@@ -1391,7 +1532,7 @@ function noteOff(id) {
   if (L.rec) {
     const spb = 60 / bpm / 4, len = Math.max(1, Math.min(LEN, Math.round((now() - L.rec.t0) / spb)));
     const arr = noteSteps[L.rec.step % LEN];
-    if (!arr.some(n => n.m === L.m && n.inst === L.inst)) { snapshot(); arr.push({ m: L.m, inst: L.inst, len }); updateGrid(); flashCell('n', L.rec.step % LEN); }
+    if (!arr.some(n => n.m === L.m && n.inst === L.inst)) { snapshot(); arr.push({ m: L.m, inst: L.inst, len }); updateGrid(); flashCell('n:' + L.inst, L.rec.step % LEN); }
   }
 }
 // computer keyboard: Z–, bottom row, A–K middle row, Q–I top row
@@ -1465,7 +1606,7 @@ const BEATS_KEY = 'micdecks.beats', AUTO_KEY = 'micdecks.autosave';
 function beatState(name) {
   const p = {}; DRUM_ROWS.forEach(r => p[r] = pat[r].map(x => x ? 'x' : '.').join(''));
   return { v: 2, name, savedAt: Date.now(), style, bpm, bars, pat: p, padSteps, noteSteps,
-           keys: { inst, keyRoot, scaleName, octShift }, soundCount: pads.filter(Boolean).length };
+           keys: { inst, keyRoot, scaleName, octShift }, soundCount: pads.filter(Boolean).length, muted: [...muted] };
 }
 function applyBeatState(st) {
   if (!st || !st.pat) throw new Error('not a Mic Decks beat');
@@ -1477,6 +1618,7 @@ function applyBeatState(st) {
   const newNotes = fit(st.noteSteps, a => Array.isArray(a) ? a.filter(o => o && INST[o.inst] && Number.isFinite(o.m)).map(o => ({ m: o.m, inst: o.inst, len: Math.max(1, Math.min(n, o.len | 0 || 1)) })) : []);
   bars = nb; LEN = n; step = step % LEN; viewBar = 0;
   DRUM_ROWS.forEach(r => pat[r] = newPat[r]); padSteps = newPads; noteSteps = newNotes;
+  muted = new Set(Array.isArray(st.muted) ? st.muted.filter(k => typeof k === 'string') : []);
   if (BEATS[st.style]) { style = st.style; document.querySelectorAll('#beatStyles button').forEach(x => x.classList.toggle('on', x.dataset.s === style)); }
   if (st.bpm >= 70 && st.bpm <= 160) { $('#bpm').value = st.bpm; setBpm(); }
   const k = st.keys;
@@ -1588,6 +1730,106 @@ $('#beatFile').onchange = async e => {
   } catch (err) { toast('That file isn’t a Mic Decks beat'); }
 };
 
+
+/* ---------- export the beat as an audio file ---------- */
+let expReps = 2;
+document.querySelectorAll('#expReps button').forEach(b => b.onclick = () => {
+  expReps = +b.dataset.r; document.querySelectorAll('#expReps button').forEach(x => x.classList.toggle('on', x === b));
+});
+$('#exportBtn').onclick = () => { openBeats(false); setTimeout(() => $('#exportBox').scrollIntoView({ block: 'center', behavior: 'smooth' }), 60); };
+
+async function renderBeatAudio(loops) {
+  const sr = ctx.sampleRate, spb = 60 / bpm / 4, start = 0.05, total = start + LEN * loops * spb + 2.5;
+  const off = new OfflineAudioContext(2, Math.ceil(total * sr), sr);
+  const oMaster = off.createGain(); oMaster.gain.value = master.gain.value;
+  const oComp = off.createDynamicsCompressor();
+  ['threshold', 'knee', 'ratio', 'attack', 'release'].forEach(k => oComp[k].value = comp[k].value);
+  const oBus = off.createGain(); oBus.connect(oMaster); oMaster.connect(oComp); oComp.connect(off.destination);
+  if (echoOn) {
+    const w = off.createGain(), d = off.createDelay(2), fb = off.createGain(), tone = off.createBiquadFilter();
+    w.gain.value = 0.55; d.delayTime.value = 0.75 * 60 / bpm; fb.gain.value = 0.45; tone.type = 'lowpass'; tone.frequency.value = 3200;
+    oBus.connect(w); w.connect(d); d.connect(tone); tone.connect(fb); fb.connect(d); tone.connect(oMaster);
+  }
+  const mk = g => { const n = off.createGain(); n.gain.value = g.gain.value; n.connect(oBus); return n; };
+  const oBeat = mk(beatGain), oInst = mk(instGain), oPad = mk(padGain);
+  const live = { ctx, bus, beatGain, instGain, padGain };
+  const lastPad = [];
+  try {
+    // the synth functions use these globals, so point them at the offline graph while scheduling
+    ctx = off; bus = oBus; beatGain = oBeat; instGain = oInst; padGain = oPad;
+    for (let L = 0; L < loops; L++) for (let i = 0; i < LEN; i++) {
+      const t = start + (L * LEN + i) * spb;
+      DRUM_ROWS.forEach(r => { if (pat[r][i] && !muted.has(r)) drumSound(r, t, r === 'h' && i % 4 === 0 ? 1.1 : 1); });
+      if (!muted.has('p')) padSteps[i].forEach(pi => {
+        const pd = pads[pi]; if (!pd) return;
+        if (lastPad[pi]) try { lastPad[pi].stop(t); } catch (_) {}
+        const src = off.createBufferSource(); src.buffer = pd.buf; src.connect(oPad); src.start(t); lastPad[pi] = src;
+      });
+      noteSteps[i].forEach(n => { if (!muted.has('n:' + n.inst)) playNote(n.inst, n.m, t, n.len * spb * 0.95); });
+    }
+  } finally { ({ ctx, bus, beatGain, instGain, padGain } = live); }
+  return off.startRendering();
+}
+function encodeWav(buf) {
+  const ch = Math.min(2, buf.numberOfChannels), n = buf.length, sr = buf.sampleRate;
+  const out = new ArrayBuffer(44 + n * ch * 2), v = new DataView(out);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * ch * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, ch, true); v.setUint32(24, sr, true); v.setUint32(28, sr * ch * 2, true);
+  v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * ch * 2, true);
+  const data = Array.from({ length: ch }, (_, c) => buf.getChannelData(c));
+  let o = 44;
+  for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) { const x = Math.max(-1, Math.min(1, data[c][i])); v.setInt16(o, x < 0 ? x * 32768 : x * 32767, true); o += 2; }
+  return new Blob([out], { type: 'audio/wav' });
+}
+// where only compressed formats can be saved (inside the Claude app), record the rendered audio in real time
+function encodeCompressed(buf, onProgress) {
+  return new Promise((resolve, reject) => {
+    if (!window.MediaRecorder || !ctx.createMediaStreamDestination) return reject(new Error('no recorder'));
+    const dest = ctx.createMediaStreamDestination(), src = ctx.createBufferSource(); src.buffer = buf; src.connect(dest);
+    const mt = pickMime(), chunks = [];
+    let mr; try { mr = new MediaRecorder(dest.stream, mt ? { mimeType: mt } : undefined); } catch (e) { return reject(e); }
+    mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    mr.onstop = () => { clearInterval(tick); resolve(new Blob(chunks, { type: (mr.mimeType || mt || 'audio/webm').split(';')[0] })); };
+    const t0 = ctx.currentTime, tick = setInterval(() => onProgress && onProgress(Math.min(1, (ctx.currentTime - t0) / buf.duration)), 250);
+    src.onended = () => setTimeout(() => mr.stop(), 150);
+    mr.start(250); src.start();
+  });
+}
+async function saveBlob(blob, filename) {
+  const dl = await getDownloads();
+  if (dl) {
+    try { await dl.save({ filename, data: blob }); return true; }
+    catch (e) { if (!e || e.code !== 'declined') toast('Couldn’t save: ' + ((e && (e.message || e.code)) || 'unknown error')); return false; }
+  }
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  return true;
+}
+let exporting = false;
+$('#beatExportAudio').onclick = async () => {
+  if (!ctx || exporting) return;
+  const hasSound = DRUM_ROWS.some(r => !muted.has(r) && pat[r].some(Boolean)) || padSteps.some(a => a.length) || noteSteps.some(a => a.length);
+  if (!hasSound) { toast('The beat is empty — add some hits or notes first'); return; }
+  exporting = true; const btn = $('#beatExportAudio'), label = btn.textContent;
+  try {
+    btn.textContent = 'RENDERING…';
+    const buf = await renderBeatAudio(expReps);
+    const name = ($('#beatName').value.trim() || 'my-beat').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'my-beat';
+    const dl = await getDownloads();
+    let blob;
+    if (dl) {                                        // inside the Claude app: .wav can't be saved, so make a compressed file
+      blob = await encodeCompressed(buf, p => { btn.textContent = `ENCODING ${Math.round(p * 100)}%`; });
+    } else blob = encodeWav(buf);
+    const ext = blob.type.includes('wav') ? 'wav' : blob.type.includes('mp4') ? 'mp4' : 'webm';
+    const ok = await saveBlob(blob, `${name}.${ext}`);
+    addMix(blob, blob.type, buf.duration, 'BEAT · ' + ($('#beatName').value.trim() || 'My beat'));
+    if (ok) toast(`Exported ${name}.${ext} (${fmt(buf.duration)}) — also in MIXER → Your mixes`);
+  } catch (e) { toast('Couldn’t export audio: ' + (e && e.message || e)); }
+  finally { btn.textContent = label; exporting = false; }
+};
+
 /* ---------- mix recorder ---------- */
 let mixRec = null, mixT0 = 0, mixCount = 0;
 function pickMime() {
@@ -1616,18 +1858,18 @@ $('#mixRecBtn').onclick = () => {
   toast('Recording your mix…');
 };
 
-function addMix(blob, type, dur) {
+function addMix(blob, type, dur, label) {
   const n = ++mixCount, url = URL.createObjectURL(blob);
   $('#mixEmpty') && $('#mixEmpty').remove();
   const el = document.createElement('div'); el.className = 'mix';
-  el.innerHTML = `<div class="mh"><span>MIX ${n} · ${fmt(dur)}</span><button data-a="pad">→ PAD</button><button data-a="save">SAVE</button></div><audio controls preload="metadata" src="${url}"></audio>`;
+  el.innerHTML = `<div class="mh"><span>${esc(label || 'MIX ' + n)} · ${fmt(dur)}</span><button data-a="pad">→ PAD</button><button data-a="save">SAVE</button></div><audio controls preload="metadata" src="${url}"></audio>`;
   el.querySelector('[data-a=save]').onclick = () => saveMix(blob, type, n, url);
   el.querySelector('[data-a=pad]').onclick = async () => {
     try { const buf = await decode(await blob.arrayBuffer()); addSound(buf, 'Mix ' + n); }
     catch (e) { toast('Couldn’t load the mix onto a pad in this browser'); }
   };
   $('#mixes').prepend(el);
-  toast(`Mix ${n} saved below`);
+  if (!label) toast(`Mix ${n} saved — see MIXER → Your mixes`);
 }
 function getDownloads() {
   if (!dlPromise) {
@@ -1637,7 +1879,7 @@ function getDownloads() {
   return dlPromise;
 }
 async function saveMix(blob, type, n, url) {
-  const ext = type.includes('mp4') ? 'mp4' : 'webm', filename = `mic-decks-mix-${n}.${ext}`;
+  const ext = type.includes('wav') ? 'wav' : type.includes('mp4') ? 'mp4' : 'webm', filename = `mic-decks-mix-${n}.${ext}`;
   const dl = await getDownloads();
   if (dl) {
     try { await dl.save({ filename, data: blob }); toast('Saved ' + filename); }
