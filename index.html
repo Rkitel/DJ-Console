@@ -212,6 +212,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:6px;bac
 .exp .h{font-family:Oxanium,sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--dim)}
 .exprow{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;font-size:12px;color:var(--dim)}
 .seg.reps{grid-template-columns:repeat(4,1fr);margin:0}
+.seg.fmt2{grid-template-columns:1fr 1fr;margin:0}
 .sheet p.small{font-size:11.5px}
 .sheet .box{max-height:92vh;overflow:auto}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;background:#eeeef6;color:#0a0a0f;font-size:13px;font-weight:600;padding:10px 14px;border-radius:10px;z-index:60;transition:.2s;max-width:92vw;text-align:center;pointer-events:none}
@@ -407,8 +408,9 @@ body.help .hint{display:block}
     <div class="exp" id="exportBox">
       <div class="h">EXPORT THIS BEAT</div>
       <div class="exprow"><span>Repeat loop</span><div class="seg reps" id="expReps"><button data-r="1">1×</button><button data-r="2" class="on">2×</button><button data-r="4">4×</button><button data-r="8">8×</button></div></div>
+      <div class="exprow"><span>Format</span><div class="seg fmt2" id="expFmt"><button data-f="mp3" class="on">MP3 · for sharing</button><button data-f="wav">WAV · best quality</button></div></div>
       <div class="row2b"><button class="main" id="beatExportAudio">🎵 AUDIO FILE</button><button class="sec" id="beatExport">{ } BEAT FILE .json</button></div>
-      <p class="small">Audio file plays anywhere (music apps, messages, video editors). Beat file opens back in Mic Decks for more editing.</p>
+      <p class="small">MP3 plays everywhere, including inside WhatsApp chats. WAV is full quality for music or video editing. The beat file opens back in Mic Decks for more editing.</p>
     </div>
     <button class="sec" id="beatImport">⬆ IMPORT BEAT FILE (.json)</button>
     <p class="small">Saving keeps the drums, notes, pad hits, mutes, tempo, loop length and key, plus your pad recordings and which sound is on each deck. Beats stay in this browser; a beat file moves them to another device.</p>
@@ -1770,6 +1772,42 @@ async function renderBeatAudio(loops) {
   } finally { ({ ctx, bus, beatGain, instGain, padGain } = live); }
   return off.startRendering();
 }
+let expFmt = 'mp3';
+document.querySelectorAll('#expFmt button').forEach(b => b.onclick = () => {
+  expFmt = b.dataset.f; document.querySelectorAll('#expFmt button').forEach(x => x.classList.toggle('on', x === b));
+});
+// MP3 encoder: lamejs (LGPL-3.0, https://github.com/zhuker/lamejs), loaded from a CDN the first time it's needed
+let lameP = null;
+function loadLame() {
+  if (window.lamejs) return Promise.resolve(window.lamejs);
+  if (!lameP) lameP = new Promise((resolve, reject) => {
+    const urls = ['https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js'];
+    const tryUrl = i => {
+      if (i >= urls.length) { lameP = null; return reject(new Error('MP3 encoder could not load (are you offline?)')); }
+      const sc = document.createElement('script'); sc.src = urls[i]; sc.async = true;
+      sc.onload = () => window.lamejs ? resolve(window.lamejs) : tryUrl(i + 1);
+      sc.onerror = () => { sc.remove(); tryUrl(i + 1); };
+      document.head.appendChild(sc);
+    };
+    tryUrl(0);
+  });
+  return lameP;
+}
+async function encodeMp3(buf, onProgress) {
+  const lame = await loadLame();
+  const ch = Math.min(2, buf.numberOfChannels), sr = buf.sampleRate;
+  const enc = new lame.Mp3Encoder(ch, sr, 192);
+  const toI = f => { const o = new Int16Array(f.length); for (let i = 0; i < f.length; i++) { const v = Math.max(-1, Math.min(1, f[i])); o[i] = v < 0 ? v * 32768 : v * 32767; } return o; };
+  const L = toI(buf.getChannelData(0)), R = ch > 1 ? toI(buf.getChannelData(1)) : null;
+  const parts = [], block = 1152;
+  for (let i = 0, k = 0; i < L.length; i += block, k++) {
+    const out = R ? enc.encodeBuffer(L.subarray(i, i + block), R.subarray(i, i + block)) : enc.encodeBuffer(L.subarray(i, i + block));
+    if (out.length) parts.push(new Uint8Array(out));
+    if (k % 200 === 0) { onProgress && onProgress(i / L.length); await new Promise(r => setTimeout(r, 0)); }
+  }
+  const end = enc.flush(); if (end.length) parts.push(new Uint8Array(end));
+  return new Blob(parts, { type: 'audio/mpeg' });
+}
 function encodeWav(buf) {
   const ch = Math.min(2, buf.numberOfChannels), n = buf.length, sr = buf.sampleRate;
   const out = new ArrayBuffer(44 + n * ch * 2), v = new DataView(out);
@@ -1787,7 +1825,7 @@ function encodeCompressed(buf, onProgress) {
   return new Promise((resolve, reject) => {
     if (!window.MediaRecorder || !ctx.createMediaStreamDestination) return reject(new Error('no recorder'));
     const dest = ctx.createMediaStreamDestination(), src = ctx.createBufferSource(); src.buffer = buf; src.connect(dest);
-    const mt = pickMime(), chunks = [];
+    const mt = pickMime(true), chunks = [];
     let mr; try { mr = new MediaRecorder(dest.stream, mt ? { mimeType: mt } : undefined); } catch (e) { return reject(e); }
     mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
     mr.onstop = () => { clearInterval(tick); resolve(new Blob(chunks, { type: (mr.mimeType || mt || 'audio/webm').split(';')[0] })); };
@@ -1818,22 +1856,27 @@ $('#beatExportAudio').onclick = async () => {
     const buf = await renderBeatAudio(expReps);
     const name = ($('#beatName').value.trim() || 'my-beat').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'my-beat';
     const dl = await getDownloads();
-    let blob;
-    if (dl) {                                        // inside the Claude app: .wav can't be saved, so make a compressed file
+    let blob, note = '';
+    if (dl) {                                        // inside the Claude app only .mp4 / .webm audio can be saved
       blob = await encodeCompressed(buf, p => { btn.textContent = `ENCODING ${Math.round(p * 100)}%`; });
+      note = ' — for MP3 or WAV, export from your website version';
+    } else if (expFmt === 'mp3') {
+      try { blob = await encodeMp3(buf, p => { btn.textContent = `MP3 ${Math.round(p * 100)}%`; }); }
+      catch (e) { blob = encodeWav(buf); note = ' — MP3 encoder unavailable, saved as WAV'; }
     } else blob = encodeWav(buf);
-    const ext = blob.type.includes('wav') ? 'wav' : blob.type.includes('mp4') ? 'mp4' : 'webm';
+    const ext = blob.type.includes('mpeg') ? 'mp3' : blob.type.includes('wav') ? 'wav' : blob.type.includes('mp4') ? (dl ? 'mp4' : 'm4a') : 'webm';
     const ok = await saveBlob(blob, `${name}.${ext}`);
     addMix(blob, blob.type, buf.duration, 'BEAT · ' + ($('#beatName').value.trim() || 'My beat'));
-    if (ok) toast(`Exported ${name}.${ext} (${fmt(buf.duration)}) — also in MIXER → Your mixes`);
+    if (ok) toast(`Exported ${name}.${ext} (${fmt(buf.duration)})` + (note || ' — also in MIXER → Your mixes'));
   } catch (e) { toast('Couldn’t export audio: ' + (e && e.message || e)); }
   finally { btn.textContent = label; exporting = false; }
 };
 
 /* ---------- mix recorder ---------- */
 let mixRec = null, mixT0 = 0, mixCount = 0;
-function pickMime() {
-  const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4;codecs=mp4a.40.2', 'audio/mp4'];
+function pickMime(preferMp4) {
+  const types = preferMp4 ? ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm']
+                          : ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4;codecs=mp4a.40.2', 'audio/mp4'];
   if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
   return types.find(t => MediaRecorder.isTypeSupported(t)) || '';
 }
@@ -1879,7 +1922,7 @@ function getDownloads() {
   return dlPromise;
 }
 async function saveMix(blob, type, n, url) {
-  const ext = type.includes('wav') ? 'wav' : type.includes('mp4') ? 'mp4' : 'webm', filename = `mic-decks-mix-${n}.${ext}`;
+  const ext = type.includes('mpeg') ? 'mp3' : type.includes('wav') ? 'wav' : type.includes('mp4') ? 'mp4' : 'webm', filename = `mic-decks-mix-${n}.${ext}`;
   const dl = await getDownloads();
   if (dl) {
     try { await dl.save({ filename, data: blob }); toast('Saved ' + filename); }
